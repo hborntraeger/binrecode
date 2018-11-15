@@ -25,6 +25,34 @@ func encode0xHex(out io.Writer) io.WriteCloser {
 	return encodeHex(out)
 }
 
+type reverseWriter struct {
+	out io.WriteCloser
+	buf bytes.Buffer
+}
+
+func (rw *reverseWriter) Write(data []byte) (int, error) {
+	return rw.buf.Write(data)
+}
+
+func (rw *reverseWriter) Close() error {
+	data := rw.buf.Bytes()
+	for i := len(data)/2 - 1; i >= 0; i-- {
+		opp := len(data) - 1 - i
+		data[i], data[opp] = data[opp], data[i]
+	}
+
+	if _, err := rw.out.Write(data); err != nil {
+		return err
+	}
+	return rw.out.Close()
+}
+
+func encodeHexReverse(out io.Writer) io.WriteCloser {
+	return &reverseWriter{
+		out: encodeHex(out),
+	}
+}
+
 type nopWriteCloser struct {
 	io.Writer
 }
@@ -66,6 +94,7 @@ var encoders = map[string]func(io.Writer) io.WriteCloser{
 	"raw":          encodeRaw,
 	"hex":          encodeHex,
 	"0xhex":        encode0xHex,
+	"rhex":         encodeHexReverse,
 }
 
 var decoders = map[string]func(io.Reader) io.Reader{
