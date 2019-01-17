@@ -30,6 +30,34 @@ type reverseWriter struct {
 	buf bytes.Buffer
 }
 
+type gowriter struct {
+	out      io.Writer
+	notfirst bool
+}
+
+func (gw *gowriter) Write(dat []byte) (int, error) {
+	cnt := 0
+	for b := range dat {
+		var err error
+		if gw.notfirst {
+			_, err = fmt.Fprintf(gw.out, ", 0x%x", b)
+		} else {
+			_, err = fmt.Fprintf(gw.out, "0x%x", b)
+			gw.notfirst = true
+		}
+		if err != nil {
+			return cnt, err
+		}
+		cnt++
+	}
+	return cnt, nil
+}
+
+func (gw *gowriter) Close() error {
+	_, err := fmt.Fprint(gw.out, "}")
+	return err
+}
+
 func (rw *reverseWriter) Write(data []byte) (int, error) {
 	return rw.buf.Write(data)
 }
@@ -69,6 +97,13 @@ func encodeRaw(out io.Writer) io.WriteCloser {
 	return nopWriteCloser{out}
 }
 
+func encodeGo(out io.Writer) io.WriteCloser {
+	fmt.Fprint(out, "[]byte{")
+	return &gowriter{
+		out: out,
+	}
+}
+
 func decodeRaw(in io.Reader) io.Reader {
 	return in
 }
@@ -95,6 +130,7 @@ var encoders = map[string]func(io.Writer) io.WriteCloser{
 	"hex":          encodeHex,
 	"0xhex":        encode0xHex,
 	"rhex":         encodeHexReverse,
+	"go":           encodeGo,
 }
 
 var decoders = map[string]func(io.Reader) io.Reader{
@@ -118,7 +154,6 @@ func usage() {
 	sort.Strings(decs)
 	fmt.Printf(usageString, filepath.Base(os.Args[0]), encs, decs)
 	os.Exit(1)
-
 }
 
 func doEncode(from, to string, in io.Reader, out io.Writer) error {
