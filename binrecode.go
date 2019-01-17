@@ -37,7 +37,7 @@ type gowriter struct {
 
 func (gw *gowriter) Write(dat []byte) (int, error) {
 	cnt := 0
-	for b := range dat {
+	for _, b := range dat {
 		var err error
 		if gw.notfirst {
 			_, err = fmt.Fprintf(gw.out, ", 0x%x", b)
