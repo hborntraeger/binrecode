@@ -157,7 +157,7 @@ func usage() {
 	}
 	sort.Strings(encs)
 	sort.Strings(decs)
-	fmt.Printf(usageString, filepath.Base(os.Args[0]), encs, decs)
+	fmt.Printf(usageString, filepath.Base(os.Args[0]), decs, encs)
 	os.Exit(1)
 }
 
