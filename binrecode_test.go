@@ -19,6 +19,7 @@ func Test_doEncode(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "raw-raw",
 			args: args{
 				"raw", "raw", bytes.NewBufferString("test"),
 			},
@@ -26,6 +27,7 @@ func Test_doEncode(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "raw-base64",
 			args: args{
 				"raw", "base64", bytes.NewBufferString("test"),
 			},
@@ -33,6 +35,7 @@ func Test_doEncode(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "raw-base64raw",
 			args: args{
 				"raw", "base64raw", bytes.NewBufferString("test"),
 			},
@@ -40,10 +43,22 @@ func Test_doEncode(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "raw-base64-long",
 			args: args{
 				"raw", "base64url", bytes.NewBufferString("test+-%!\"§!\"$%!&"),
 			},
-			wantOut: "dGVzdA==",
+			wantOut: "dGVzdCstJSEiwqchIiQlISY=",
+			wantErr: false,
+		},
+		{
+			name: "raw-go",
+			args: args{
+				"raw", "go", bytes.NewBufferString("test+-%!\"§!\"$%!&12345678901234567890"),
+			},
+			wantOut: `[]byte{
+0x74, 0x65, 0x73, 0x74, 0x2b, 0x2d, 0x25, 0x21, 0x22, 0xc2, 0xa7, 0x21, 0x22, 0x24, 0x25, 0x21
+, 0x26, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35
+, 0x36, 0x37, 0x38, 0x39, 0x30}`,
 			wantErr: false,
 		},
 	}
