@@ -41,15 +41,17 @@ func (gw *gowriter) Write(dat []byte) (int, error) {
 	for _, b := range dat {
 		var err error
 		if gw.notfirst {
-			_, err = fmt.Fprintf(gw.out, ", %#02x", b)
+			if gw.written%16 == 0 {
+				_, err = fmt.Fprintf(gw.out, ",\n\t%#02x", b)
+			} else {
+				_, err = fmt.Fprintf(gw.out, ", %#02x", b)
+			}
 		} else {
 			_, err = fmt.Fprintf(gw.out, "%#02x", b)
 			gw.notfirst = true
 		}
 		gw.written++
-		if gw.written%16 == 0 {
-			fmt.Fprintln(gw.out)
-		}
+
 		if err != nil {
 			return cnt, err
 		}
@@ -103,7 +105,7 @@ func encodeRaw(out io.Writer) io.WriteCloser {
 }
 
 func encodeGo(out io.Writer) io.WriteCloser {
-	fmt.Fprint(out, "[]byte{\n")
+	fmt.Fprint(out, "[]byte{\n\t")
 	return &gowriter{
 		out: out,
 	}
