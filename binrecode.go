@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -13,6 +14,10 @@ import (
 
 func makeEncodeBase64(encoding *base64.Encoding) func(io.Writer) io.WriteCloser {
 	return func(out io.Writer) io.WriteCloser { return base64.NewEncoder(encoding, out) }
+}
+
+func makeEncodeBase32(encoding *base32.Encoding) func(io.Writer) io.WriteCloser {
+	return func(out io.Writer) io.WriteCloser { return base32.NewEncoder(encoding, out) }
 }
 
 func encodeHex(out io.Writer) io.WriteCloser {
@@ -123,6 +128,10 @@ func makeDecodeBase64(encoding *base64.Encoding) func(io.Reader) io.Reader {
 	return func(in io.Reader) io.Reader { return base64.NewDecoder(encoding, in) }
 }
 
+func makeDecodeBase32(encoding *base32.Encoding) func(io.Reader) io.Reader {
+	return func(in io.Reader) io.Reader { return base32.NewDecoder(encoding, in) }
+}
+
 var usageString = `Usage %v <sourceencoding> <targetencoding> [data]
 if data is not set, data is read from stdin
 inputs: %v
@@ -133,6 +142,8 @@ var encoders = map[string]func(io.Writer) io.WriteCloser{
 	"base64raw":    makeEncodeBase64(base64.RawStdEncoding),
 	"base64url":    makeEncodeBase64(base64.URLEncoding),
 	"base64urlraw": makeEncodeBase64(base64.RawURLEncoding),
+	"base32":       makeEncodeBase32(base32.StdEncoding),
+	"base32hex":    makeEncodeBase32(base32.HexEncoding),
 	"raw":          encodeRaw,
 	"hex":          encodeHex,
 	"0xhex":        encode0xHex,
@@ -147,6 +158,8 @@ var decoders = map[string]func(io.Reader) io.Reader{
 	"base64raw":    makeDecodeBase64(base64.RawStdEncoding),
 	"base64url":    makeDecodeBase64(base64.URLEncoding),
 	"base64urlraw": makeDecodeBase64(base64.RawURLEncoding),
+	"base32":       makeDecodeBase32(base32.StdEncoding),
+	"base32hex":    makeDecodeBase32(base32.HexEncoding),
 }
 
 func usage() {
