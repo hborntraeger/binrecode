@@ -20,6 +20,49 @@ func makeEncodeBase32(encoding *base32.Encoding) func(io.Writer) io.WriteCloser 
 	return func(out io.Writer) io.WriteCloser { return base32.NewEncoder(encoding, out) }
 }
 
+type binaryEncoder struct {
+	io.WriteCloser
+}
+
+func (be *binaryEncoder) Write(in []byte) (int, error) {
+	cnt := 0
+	for _, b := range in {
+		_, err := fmt.Fprintf(be.WriteCloser, "%08b", b)
+		if err != nil {
+			return cnt, err
+		}
+		cnt++
+	}
+	return cnt, nil
+}
+
+func encodeBinary(out io.Writer) io.WriteCloser {
+	return &binaryEncoder{nopWriteCloser{out}}
+}
+
+type bitfieldEncoder struct {
+	io.WriteCloser
+}
+
+func (be *bitfieldEncoder) Write(in []byte) (int, error) {
+	out := ""
+	for _, b := range in {
+		for i := 0; i < 8; i++ {
+			if (b>>i)&1 == 1 {
+				out += "1"
+			} else {
+				out += "0"
+			}
+		}
+	}
+	_, err := be.WriteCloser.Write([]byte(out))
+	return len(in), err
+}
+
+func encodeBitfield(out io.Writer) io.WriteCloser {
+	return &bitfieldEncoder{nopWriteCloser{out}}
+}
+
 func encodeHex(out io.Writer) io.WriteCloser {
 	oe := hex.NewEncoder(out)
 	return nopWriteCloser{oe}
@@ -149,6 +192,8 @@ var encoders = map[string]func(io.Writer) io.WriteCloser{
 	"0xhex":        encode0xHex,
 	"rhex":         encodeHexReverse,
 	"go":           encodeGo,
+	"binary":       encodeBinary,
+	"bitfield":     encodeBitfield,
 }
 
 var decoders = map[string]func(io.Reader) io.Reader{
